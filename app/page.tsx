@@ -7,7 +7,6 @@ type Status =
   | "Assigned"
   | "Active"
   | "Monitoring"
-  | "Dispatched"
   | "Ongoing"
   | "Resolved";
 
@@ -167,9 +166,6 @@ function statusClasses(status: Status) {
     case "Monitoring":
       return "bg-amber-50 text-amber-700 ring-amber-200";
 
-    case "Dispatched":
-      return "bg-blue-50 text-blue-700 ring-blue-200";
-
     case "Ongoing":
       return "bg-indigo-50 text-indigo-700 ring-indigo-200";
 
@@ -185,9 +181,6 @@ function statusDot(status: Status) {
 
     case "Monitoring":
       return "bg-amber-500";
-
-    case "Dispatched":
-      return "bg-blue-500";
 
     case "Ongoing":
       return "bg-indigo-500";
@@ -439,31 +432,42 @@ export default function Home() {
     setMessage(`${selectedTask.id} successfully updated.`);
   }
 
+  const updateStatus = (id: string, updates: Partial<Task>) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id
+          ? { ...task, ...updates }
+          : task
+      )
+    );
+
+  setSelectedTask((current) =>
+      current && current.id === id
+        ? { ...current, ...updates }
+        : current
+    );
+  };
+
   /* -----------------------------
      STATUS OPTIONS
   ----------------------------- */
 
-  function getStatusOptions(status: Status): Status[] {
+  const getNextStatus = (status: Status): Status | null => {
     switch (status) {
       case "Active":
-        return ["Active", "Dispatched"];
-
-      case "Dispatched":
-        return ["Dispatched", "Ongoing"];
+      case "Monitoring":
+        return "Ongoing";
 
       case "Ongoing":
-        return ["Ongoing", "Resolved"];
-
-      case "Monitoring":
-        return ["Monitoring", "Ongoing"];
+        return "Resolved";
 
       case "Resolved":
-        return ["Resolved"];
+        return null;
 
       default:
-        return [status];
+        return null;
     }
-  }
+  };
 
   /* -----------------------------
      MARK NOTIFICATIONS READ
@@ -1004,27 +1008,22 @@ export default function Home() {
   ----------------------------- */
 
   function renderTaskDetails() {
-    if (!selectedTask) return null;
+  if (!selectedTask) return null;
 
-    const statusSteps =
-      selectedTask.status === "Monitoring"
-        ? ["Assigned", "Dispatched", "Ongoing", "Resolved"]
-        : ["Assigned", "Dispatched", "Ongoing", "Resolved"];
+  const statusSteps = [
+    "Assigned",
+    "Ongoing",
+    "Resolved",
+  ];
 
-    const trackerStatus =
-      selectedTask.status === "Active" ||
-      selectedTask.status === "Monitoring"
-        ? "Assigned"
-        : selectedTask.status;
+  const trackerStatus =
+    selectedTask.status === "Active" ||
+    selectedTask.status === "Monitoring"
+      ? "Assigned"
+      : selectedTask.status;
 
-    const currentStep = statusSteps.indexOf(trackerStatus);
-
-    const currentIndex =
-      statusSteps.indexOf(selectedTask.status) >= 0
-        ? statusSteps.indexOf(selectedTask.status)
-        : selectedTask.status === "Monitoring"
-        ? 0
-        : 0;
+  const currentIndex = statusSteps.indexOf(trackerStatus);
+  const nextStatus = getNextStatus(selectedTask.status);
 
     return (
       <div className="mx-auto max-w-4xl space-y-6">
@@ -1088,7 +1087,7 @@ export default function Home() {
             <div className="relative">
               <div className="absolute left-0 right-0 top-4 hidden h-0.5 bg-slate-200 sm:block" />
 
-              <div className="relative grid grid-cols-4 gap-2">
+              <div className="relative grid grid-cols-3 gap-2">
                 {statusSteps.map((step, index) => {
                   const completed = index <= currentIndex;
 
@@ -1136,23 +1135,7 @@ export default function Home() {
 
           <div className="mt-5 space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">
-                Status
-              </label>
-
-              <select
-                value={newStatus}
-                onChange={(event) =>
-                  setNewStatus(event.target.value as Status)
-                }
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-              >
-                {getStatusOptions(selectedTask.status).map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
+              
             </div>
 
             <div>
@@ -1169,12 +1152,17 @@ export default function Home() {
               />
             </div>
 
-            <button
-              onClick={updateTask}
-              className="w-full rounded-xl bg-[#0f2a5c] px-5 py-3 font-semibold text-white transition hover:bg-[#163b7c] active:scale-[0.99]"
-            >
-              Save Update
-            </button>
+
+              {nextStatus && (
+                <button
+                  onClick={() =>
+                    updateStatus(selectedTask.id, { status: nextStatus })
+                  }
+                  className="cursor-pointer w-full rounded-xl bg-[#0f2a5c] px-5 py-3 font-semibold text-white transition hover:bg-[#163b7c] active:scale-[0.99]"
+                >
+                  Mark as {nextStatus}
+                </button>
+              )}
 
             {message && (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
@@ -1338,7 +1326,28 @@ export default function Home() {
           </div>
         </section>
 
-        
+        {/* INFO */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+                <div>
+                  <h3 className="font-bold text-slate-900">
+                    Change Password
+                  </h3>
+                </div>
+            </div>
+
+            <button
+              className="flex justify-center items-center cursor-pointer
+              gap-2 rounded-2xl px-3 py-1.5 text-xs font-semibold ring-1
+              bg-red-50 text-red-700 ring-red-200"
+            >
+              <span>↪</span>
+              <span>Logout</span>
+            </button>
+
+        </section>
       </div>
     );
   }
