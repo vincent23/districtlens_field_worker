@@ -1338,49 +1338,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Members */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {teamMembers.map((member) => (
-            <div
-              key={member.name}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
-                    {member.initials}
-                  </div>
-
-                  <span
-                    className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                      member.online ? "bg-emerald-500" : "bg-slate-300"
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-slate-900">
-                    {member.name}
-                  </h3>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    {member.role}
-                  </p>
-
-                  <p
-                    className={`mt-2 text-xs font-semibold ${
-                      member.online
-                        ? "text-emerald-600"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    {member.online ? "Online" : "Offline"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </section>
+        
       </div>
     );
   }
