@@ -370,7 +370,9 @@ export default function Home() {
         task.type.toLowerCase().includes(search.toLowerCase());
 
       const matchesFilter =
-        taskFilter === "All" || task.status === taskFilter;
+        taskFilter === "All"
+        ? task.status !== "Resolved"
+        : task.status === taskFilter;
 
       return matchesSearch && matchesFilter;
     });
@@ -853,7 +855,6 @@ export default function Home() {
       "All",
       "Active",
       "Monitoring",
-      "Dispatched",
       "Ongoing",
       "Resolved",
     ];
@@ -915,7 +916,7 @@ export default function Home() {
                     }`}
                   >
                     {filter === "All"
-                      ? tasks.length
+                      ? filteredTasks.length
                       : tasks.filter((task) => task.status === filter).length}
                   </span>
                 </button>
