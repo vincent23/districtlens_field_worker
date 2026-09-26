@@ -10,7 +10,13 @@ type Status =
   | "Ongoing"
   | "Resolved";
 
-type Page = "home" | "tasks" | "notifications" | "team";
+type StatusHistory = {
+  status: string;
+  time: string;
+  comment: string;
+};
+
+type Page = "home" | "tasks" | "notifications" | "team" | "history";
 
 type Task = {
   id: string;
@@ -18,6 +24,7 @@ type Task = {
   location: string;
   status: Status;
   etr: string;
+  time: string;
   team: string;
   fieldAction: boolean;
   remarks?: string;
@@ -40,6 +47,14 @@ type TeamMember = {
   online: boolean;
 };
 
+type HistoryLog = {
+  id: string;
+  incidentId: string;
+  action: string;
+  status: Status;
+  time: string;
+};
+
 // #endregion
 
 // #region DATABASE
@@ -54,6 +69,7 @@ const initialTasks: Task[] = [
     location: "Brgy. San Roque",
     status: "Active",
     etr: "2:30 PM",
+    time: "10:30 AM",
     team: "Team Alpha",
     fieldAction: true,
   },
@@ -63,6 +79,7 @@ const initialTasks: Task[] = [
     location: "Brgy. San Agustin",
     status: "Monitoring",
     etr: "4:00 PM",
+    time: "11:15 AM",
     team: "Team Alpha",
     fieldAction: true,
   },
@@ -72,6 +89,7 @@ const initialTasks: Task[] = [
     location: "Brgy. Daang Amaya",
     status: "Monitoring",
     etr: "5:30 PM",
+    time: "12:00 PM",
     team: "Team Alpha",
     fieldAction: true,
   },
@@ -81,6 +99,7 @@ const initialTasks: Task[] = [
     location: "Brgy. Capipisa",
     status: "Resolved",
     etr: "Completed",
+    time: "9:30 AM",
     team: "Team Alpha",
     fieldAction: true,
   },
@@ -125,30 +144,21 @@ const initialNotifications: Notification[] = [
   },
 ];
 
-const teamMembers: TeamMember[] = [
+const statusHistory: StatusHistory[] = [
   {
-    name: "Marco Villanueva",
-    role: "Team Leader",
-    initials: "MV",
-    online: true,
+    status: "Assigned",
+    time: "Sep 25, 2026, 12:25 AM",
+    comment: "Assignment created",
   },
   {
-    name: "Angelica Reyes",
-    role: "Field Technician",
-    initials: "AR",
-    online: true,
+    status: "Ongoing",
+    time: "",
+    comment: "Field worker started task",
   },
   {
-    name: "Julius Santos",
-    role: "Field Technician",
-    initials: "JS",
-    online: false,
-  },
-  {
-    name: "Bea Fernandez",
-    role: "Dispatch Coordinator",
-    initials: "BF",
-    online: true,
+    status: "Resolved",
+    time: "",
+    comment: "Assignment completed",
   },
 ];
 
@@ -207,42 +217,44 @@ function Icon({
   name,
   className = "h-5 w-5",
 }: {
-  name: "home" | "task" | "notification" | "users" | "search" | "arrow";
+  name: "home" | "task" | "notification" | "users" | "search" | "arrow" | "history";
   className?: string;
 }) {
   if (name === "home") {
     return (
       <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={className}
-      >
-        <path d="m3 10 9-7 9 7" />
-        <path d="M5 9v11h14V9" />
-        <path d="M9 20v-6h6v6" />
-      </svg>
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+      <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </svg>
     );
   }
 
   if (name === "task") {
     return (
       <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={className}
-      >
-        <path d="M9 11h8" />
-        <path d="M9 15h8" />
-        <path d="M9 7h8" />
-        <path d="M5 7h.01" />
-        <path d="M5 11h.01" />
-        <path d="M5 15h.01" />
-        <rect x="3" y="3" width="18" height="18" rx="3" />
-      </svg>
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <path d="M12 11h4" />
+      <path d="M12 16h4" />
+      <path d="M8 11h.01" />
+      <path d="M8 16h.01" />
+    </svg>
     );
   }
 
@@ -253,6 +265,8 @@ function Icon({
         fill="none"
         stroke="currentColor"
         strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         className={className}
       >
         <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
@@ -264,19 +278,38 @@ function Icon({
   if (name === "users") {
     return (
       <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={className}
-      >
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M18 21a8 8 0 0 0-16 0" />
+      <circle cx="10" cy="8" r="5" />
+      <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
+    </svg>
     );
   }
+
+  if (name === "history") { 
+    return ( 
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+    );
+    }
 
   if (name === "search") {
     return (
@@ -330,6 +363,12 @@ export default function Home() {
 
   const [message, setMessage] = useState("");
 
+  const [historyLogs, setHistoryLogs] = useState<HistoryLog[]>([]);
+
+  const [historySearch, setHistorySearch] = useState("");
+
+  const [showUndo, setShowUndo] = useState(false);
+
   /* -----------------------------
      COUNTS
   ----------------------------- */
@@ -378,6 +417,53 @@ export default function Home() {
     });
   }, [tasks, search, taskFilter]);
 
+
+  /* -----------------------------
+    FILTER HISTORY LOGS
+  ----------------------------- */
+  const filteredHistoryLogs = historyLogs.filter((log) => {
+  const search = historySearch.toLowerCase();
+
+  return (
+      log.incidentId.toLowerCase().includes(search) ||
+      log.action.toLowerCase().includes(search) ||
+      log.status.toLowerCase().includes(search)
+    );
+  });
+
+  /* -----------------------------
+    CALCULATE CURRENT TIME
+  ----------------------------- */
+  const formatTimeAgo = (time: string) => {
+  const seconds = Math.floor(
+      (Date.now() - new Date(time).getTime()) / 1000
+    );
+
+    if (seconds < 5) {
+      return "Just now";
+    }
+
+    if (seconds < 60) {
+      return `${seconds} seconds ago`;
+    }
+
+    const minutes = Math.floor(seconds / 60);
+
+    if (minutes < 60) {
+      return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) {
+      return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+
+    return `${days} ${days === 1 ? "day" : "days"} ago`;
+  };
+
   /* -----------------------------
      OPEN TASK
   ----------------------------- */
@@ -418,37 +504,42 @@ export default function Home() {
         : null
     );
 
-    setNotifications((current) => [
-      {
-        id: `N-${Date.now()}`,
-        title: `Status updated`,
-        description: `${selectedTask.id} is now ${newStatus}.`,
-        status: newStatus,
-        incidentId: selectedTask.id,
-        time: "Just now",
-        read: false,
-      },
-      ...current,
-    ]);
-
-    setMessage(`${selectedTask.id} successfully updated.`);
+    
   }
-
+  
+  // UPDATE STATUS FUNCTION
   const updateStatus = (id: string, updates: Partial<Task>) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? { ...task, ...updates }
-          : task
-      )
-    );
+  setTasks((prev) =>
+    prev.map((task) =>
+      task.id === id
+        ? { ...task, ...updates }
+        : task
+    )
+  );
 
   setSelectedTask((current) =>
-      current && current.id === id
-        ? { ...current, ...updates }
-        : current
-    );
-  };
+    current && current.id === id
+      ? { ...current, ...updates }
+      : current
+  );
+
+  if (updates.status) {
+  const status = updates.status;
+
+  setHistoryLogs((current) => [
+    {
+      id: `H-${Date.now()}`,
+      action: `Status changed to ${status}`,
+      status: status,
+      incidentId: id,
+      time: new Date().toISOString(),
+    },
+    ...current,
+  ]);
+}
+
+  setMessage(`${id} successfully updated.`);
+};
 
   /* -----------------------------
      STATUS OPTIONS
@@ -482,6 +573,27 @@ export default function Home() {
         read: true,
       }))
     );
+  }
+
+  function deleteNotification(id: string) {
+    setNotifications((current) =>
+      current.filter((notification) => notification.id !== id)
+    );
+  }
+
+  function deleteReadNotifications() {
+    setNotifications((current) =>
+      current.filter((notification) => !notification.read)
+    );
+    function showMessage(text: string) {
+      setMessage(text);
+
+      setTimeout(() => {
+        setMessage("");
+      }, 5000);
+    }
+
+    showMessage("Read notifications deleted successfully.");
   }
 
   /* -----------------------------
@@ -556,18 +668,12 @@ export default function Home() {
           </div>
 
           <button
-            onClick={() => setPage("notifications")}
+            onClick={() => setPage("history")}
             className="relative flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
           >
-            <Icon name="notification" className="h-5 w-5" />
+            <Icon name="history" className="h-5 w-5" />
 
-            Notifications
-
-            {unreadNotifications > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">
-                {unreadNotifications}
-              </span>
-            )}
+            History Log
           </button>
         </div>
 
@@ -646,6 +752,8 @@ export default function Home() {
               >
                 {/* Task information */}
                 <div className="flex min-w-0 flex-1 items-center gap-3">
+
+                  {/* ID NUMBER tinatanggal din ung INC. para number lng lumbas */}
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-blue-700 sm:h-11 sm:w-11">
                     {task.id.replace("INC-", "")}
                   </div>
@@ -664,15 +772,27 @@ export default function Home() {
                 {/* Task status information */}
                 <div className="flex min-w-0 items-center justify-between gap-3 pl-[52px] sm:pl-[55px] md:shrink-0 md:justify-end md:pl-0">
                   
-                  <div className="shrink-0 text-left md:text-right">
-                    <p className="text-[10px] text-slate-400 sm:text-xs">
-                      ETR
-                    </p>
+                  {/* Time Added */}
+                    <div className="shrink-0 text-left md:text-right">
+                      <p className="text-[10px] text-slate-400 sm:text-xs">
+                        Uploaded
+                      </p>
 
-                    <p className="text-xs font-semibold text-slate-700 sm:text-sm">
-                      {task.etr}
-                    </p>
-                  </div>
+                      <p className="text-xs font-semibold text-slate-700 sm:text-sm">
+                        {task.time}
+                      </p>
+                    </div>
+
+                    {/* ETR */}
+                    <div className="shrink-0 text-left md:text-right">
+                      <p className="text-[10px] text-slate-400 sm:text-xs">
+                        ETR
+                      </p>
+
+                      <p className="text-xs font-semibold text-slate-700 sm:text-sm">
+                        {task.etr}
+                      </p>
+                    </div>
 
                   <StatusBadge status={task.status} />
 
@@ -1017,6 +1137,8 @@ export default function Home() {
     "Resolved",
   ];
 
+
+
   const trackerStatus =
     selectedTask.status === "Active" ||
     selectedTask.status === "Monitoring"
@@ -1086,19 +1208,21 @@ export default function Home() {
 
           <div className="mt-8">
             <div className="relative">
-              <div className="absolute left-0 right-0 top-4 hidden h-0.5 bg-slate-200 sm:block" />
+              {/* Connecting line */}
+              <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-slate-200" />
 
-              <div className="relative grid grid-cols-3 gap-2">
-                {statusSteps.map((step, index) => {
+              <div className="relative space-y-7">
+                {statusHistory.map((step, index) => {
                   const completed = index <= currentIndex;
 
                   return (
                     <div
-                      key={step}
-                      className="flex flex-col items-center text-center"
+                      key={step.status}
+                      className="relative flex gap-4"
                     >
+                      {/* Number circle */}
                       <div
-                        className={`z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white text-xs font-bold shadow-sm ${
+                        className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-4 border-white text-xs font-bold shadow-sm ${
                           completed
                             ? "bg-[#0f2a5c] text-white"
                             : "bg-slate-200 text-slate-500"
@@ -1107,15 +1231,26 @@ export default function Home() {
                         {index + 1}
                       </div>
 
-                      <p
-                        className={`mt-2 text-xs font-semibold ${
-                          completed
-                            ? "text-[#0f2a5c]"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        {step}
-                      </p>
+                      {/* Status information */}
+                      <div className="min-w-0 pt-0.5">
+                        <p
+                          className={`text-sm font-semibold ${
+                            completed
+                              ? "text-[#0f2a5c]"
+                              : "text-slate-400"
+                          }`}
+                        >
+                          {step.status}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                          {step.time || "Waiting..."}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                          {step.comment}
+                        </p>
+                      </div>
                     </div>
                   );
                 })}
@@ -1198,91 +1333,123 @@ export default function Home() {
             </p>
           </div>
 
-          <button
-            onClick={markNotificationsRead}
-            className="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
-          >
-            Mark all as read
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={markNotificationsRead}
+              className="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
+            >
+              Mark all as read
+            </button>
+
+            <button
+              onClick={deleteReadNotifications}
+              className="w-fit rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
+            >
+              Delete read
+            </button>
+          </div>
+
+          {message && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
+                {message}
+              </div>
+            )}
         </div>
 
         <div className="space-y-3">
-          {notifications.map((notification) => (
-            <button
-              key={notification.id}
-              onClick={() => {
-                const task = tasks.find(
-                  (item) => item.id === notification.incidentId
-                );
+          {notifications.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+              <Icon
+                name="notification"
+                className="mx-auto h-10 w-10 text-slate-300"
+              />
 
-                if (task) {
-                  openTask(task);
-                }
+              <p className="mt-3 text-sm font-semibold text-slate-600">
+                No notifications
+              </p>
 
-                setNotifications((current) =>
-                  current.map((item) =>
-                    item.id === notification.id
-                      ? { ...item, read: true }
-                      : item
-                  )
-                );
-              }}
-              className={`w-full rounded-2xl border p-5 text-left transition hover:border-blue-200 hover:shadow-sm ${
-                notification.read
-                  ? "border-slate-200 bg-white"
-                  : "border-blue-100 bg-blue-50/50"
-              }`}
-            >
-              <div className="flex gap-4">
-                <div
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                    notification.read
-                      ? "bg-slate-100 text-slate-500"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  <Icon name="notification" className="h-5 w-5" />
-                </div>
+              <p className="mt-1 text-sm text-slate-400">
+                You don't have any notifications yet.
+              </p>
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <button
+                key={notification.id}
+                onClick={() => {
+                  const task = tasks.find(
+                    (item) => item.id === notification.incidentId
+                  );
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col justify-between gap-2 sm:flex-row">
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        {notification.title}
-                      </p>
+                  if (task) {
+                    openTask(task);
+                  }
 
-                      <p className="mt-1 text-sm text-slate-500">
-                        {notification.description}
-                      </p>
+                  setNotifications((current) =>
+                    current.map((item) =>
+                      item.id === notification.id
+                        ? { ...item, read: true }
+                        : item
+                    )
+                  );
+                }}
+                className={`w-full rounded-2xl border p-5 text-left transition hover:border-blue-200 hover:shadow-sm ${
+                  notification.read
+                    ? "border-slate-200 bg-white"
+                    : "border-blue-100 bg-blue-50/50"
+                }`}
+              >
+                <div className="flex gap-4">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                      notification.read
+                        ? "bg-slate-100 text-slate-500"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
+                  >
+                    <Icon name="notification" className="h-5 w-5" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col justify-between gap-2 sm:flex-row">
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {notification.title}
+                        </p>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                          {notification.description}
+                        </p>
+                      </div>
+
+                      {!notification.read && (
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600" />
+                      )}
                     </div>
 
-                    {!notification.read && (
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600" />
-                    )}
-                  </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <StatusBadge status={notification.status} />
 
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <StatusBadge status={notification.status} />
+                      <span className="text-xs text-slate-400">
+                        {notification.incidentId}
+                      </span>
 
-                    <span className="text-xs text-slate-400">
-                      {notification.incidentId}
-                    </span>
-
-                    <span className="text-xs text-slate-400">
-                      {notification.time}
-                    </span>
+                      <span className="text-xs text-slate-400">
+                        {notification.time}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          )}
         </div>
       </div>
     );
   }
 
   /* -----------------------------
-     TEAM
+     TEAM PROFILE
   ----------------------------- */
 
   function renderTeam() {
@@ -1316,33 +1483,32 @@ export default function Home() {
                 Field Operations Team
               </p>
             </div>
-
-            <div className="rounded-xl bg-white/10 px-5 py-3">
-              <p className="text-xs text-blue-200">Members</p>
-
-              <p className="mt-1 text-2xl font-bold">
-                {teamMembers.length}
-              </p>
-            </div>
+            
           </div>
         </section>
 
         {/* INFO */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-                <div>
-                  <h3 className="font-bold text-slate-900">
-                    Change Password
-                  </h3>
-                </div>
-            </div>
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-1">
+          
+            <button
+                className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
+              >
+                <Icon name="task" className="h-5 w-5" />
+
+                Change Password
+            </button>
 
             <button
-              className="flex justify-center items-center cursor-pointer
-              gap-2 rounded-2xl px-3 py-1.5 text-xs font-semibold ring-1
-              bg-red-50 text-red-700 ring-red-200"
+                onClick={() => setPage("history")}
+                className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
+              >
+                <Icon name="history" className="h-5 w-5" />
+
+                History Log
+            </button>
+
+            <button
+              className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
             >
               <span>↪</span>
               <span>Logout</span>
@@ -1352,6 +1518,101 @@ export default function Home() {
       </div>
     );
   }
+
+  /*------------------------------
+    HISTORY LOG
+  -------------------------------*/
+  
+  const renderHistory = () => (
+  <section className="space-y-5">
+    {/* Header */}
+    <div>
+      <h1 className="text-2xl font-bold text-slate-900">
+        History Log
+      </h1>
+
+      <p className="mt-1 text-sm text-slate-500">
+        Track changes and actions made to incidents.
+      </p>
+    </div>
+
+    {/* Search Bar */}
+    <div className="relative">
+      <Icon
+        name="search"
+        className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+      />
+
+      <input
+        type="text"
+        value={historySearch}
+        onChange={(e) => setHistorySearch(e.target.value)}
+        placeholder="Search history..."
+        className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+      />
+    </div>
+
+    {/* History List */}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {filteredHistoryLogs.length > 0 ? (
+        <div className="divide-y divide-slate-100">
+          {filteredHistoryLogs.map((log) => (
+            <button
+              key={log.id}
+              onClick={() => {
+                const task = tasks.find(
+                  (task) => task.id === log.incidentId
+                );
+
+                if (task) {
+                  openTask(task);
+                }
+              }}
+              className="w-full p-4 text-left transition hover:bg-slate-50 sm:p-5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900">
+                    {log.action}
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Incident: {log.incidentId}
+                  </p>
+
+                  <div className="mt-2">
+                    <StatusBadge status={log.status} />
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-xs text-slate-400">
+                    {formatTimeAgo(log.time)}
+                  </span>
+
+                  <Icon
+                    name="arrow"
+                    className="h-5 w-5 text-slate-400"
+                  />
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="p-8 text-center">
+          <p className="font-semibold text-slate-700">
+            No history found
+          </p>
+
+          <p className="mt-1 text-sm text-slate-400">
+            Try searching for another incident or status.
+          </p>
+        </div>
+      )}
+    </div>
+  </section>
+);
 
   /* -----------------------------
      PAGE CONTENT
@@ -1367,6 +1628,8 @@ export default function Home() {
     content = renderTasks();
   } else if (page === "notifications") {
     content = renderNotifications();
+  } else if (page === "history") {
+    content = renderHistory();
   } else {
     content = renderTeam();
   }
@@ -1440,7 +1703,7 @@ export default function Home() {
               setSelectedTask(null);
               setPage("home");
             }}
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold transition ${
+            className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold cursor-pointer transition ${
               page === "home" && !selectedTask
                 ? "text-[#0f2a5c]"
                 : "text-slate-400 hover:text-slate-600"
@@ -1455,7 +1718,7 @@ export default function Home() {
               setSelectedTask(null);
               setPage("tasks");
             }}
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold transition ${
+            className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold cursor-pointer transition ${
               page === "tasks" && !selectedTask
                 ? "text-[#0f2a5c]"
                 : "text-slate-400 hover:text-slate-600"
@@ -1469,9 +1732,8 @@ export default function Home() {
             onClick={() => {
               setSelectedTask(null);
               setPage("notifications");
-              markNotificationsRead();
             }}
-            className={`relative flex flex-col items-center gap-1 py-3 text-xs font-semibold transition ${
+            className={`relative flex flex-col items-center gap-1 py-3 text-xs font-semibold cursor-pointer transition ${
               page === "notifications"
                 ? "text-[#0f2a5c]"
                 : "text-slate-400 hover:text-slate-600"
@@ -1495,7 +1757,7 @@ export default function Home() {
               setSelectedTask(null);
               setPage("team");
             }}
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold transition ${
+            className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold cursor-pointer transition ${
               page === "team"
                 ? "text-[#0f2a5c]"
                 : "text-slate-400 hover:text-slate-600"
