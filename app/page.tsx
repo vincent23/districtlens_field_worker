@@ -1,395 +1,69 @@
 "use client";
 
-// #region VARIABLES
 import { useMemo, useState } from "react";
-
-type Status =
-  | "Assigned"
-  | "Active"
-  | "Monitoring"
-  | "Ongoing"
-  | "Resolved";
-
-type StatusHistory = {
-  status: string;
-  time: string;
-  comment: string;
-};
-
-type Page = "home" | "tasks" | "notifications" | "team" | "history";
-
-type Task = {
-  id: string;
-  type: string;
-  location: string;
-  status: Status;
-  etr: string;
-  time: string;
-  team: string;
-  fieldAction: boolean;
-  remarks?: string;
-};
-
-type Notification = {
-  id: string;
-  title: string;
-  description: string;
-  status: Status;
-  incidentId: string;
-  time: string;
-  read: boolean;
-};
-
-type TeamMember = {
-  name: string;
-  role: string;
-  initials: string;
-  online: boolean;
-};
-
-type HistoryLog = {
-  id: string;
-  incidentId: string;
-  action: string;
-  status: Status;
-  time: string;
-};
-
-// #endregion
-
-// #region DATABASE
-/* -----------------------------
-   SAMPLE DATA
------------------------------ */
-
-const initialTasks: Task[] = [
-  {
-    id: "INC-001",
-    type: "Water Line Rupture",
-    location: "Brgy. San Roque",
-    status: "Active",
-    etr: "2:30 PM",
-    time: "10:30 AM",
-    team: "Team Alpha",
-    fieldAction: true,
-  },
-  {
-    id: "INC-002",
-    type: "Water Line Rupture",
-    location: "Brgy. San Agustin",
-    status: "Monitoring",
-    etr: "4:00 PM",
-    time: "11:15 AM",
-    team: "Team Alpha",
-    fieldAction: true,
-  },
-  {
-    id: "INC-003",
-    type: "Water Line Rupture",
-    location: "Brgy. Daang Amaya",
-    status: "Monitoring",
-    etr: "5:30 PM",
-    time: "12:00 PM",
-    team: "Team Alpha",
-    fieldAction: true,
-  },
-  {
-    id: "INC-004",
-    type: "Water Line Rupture",
-    location: "Brgy. Capipisa",
-    status: "Resolved",
-    etr: "Completed",
-    time: "9:30 AM",
-    team: "Team Alpha",
-    fieldAction: true,
-  },
-];
-
-const initialNotifications: Notification[] = [
-  {
-    id: "N-001",
-    title: "New incident assigned",
-    description: "A new incident has been assigned to your team.",
-    status: "Active",
-    incidentId: "INC-001",
-    time: "10 minutes ago",
-    read: false,
-  },
-  {
-    id: "N-002",
-    title: "Status changed to Monitoring",
-    description: "INC-002 is now being monitored.",
-    status: "Monitoring",
-    incidentId: "INC-002",
-    time: "25 minutes ago",
-    read: false,
-  },
-  {
-    id: "N-003",
-    title: "Incident resolved",
-    description: "INC-004 has been marked as resolved.",
-    status: "Resolved",
-    incidentId: "INC-004",
-    time: "1 hour ago",
-    read: true,
-  },
-  {
-    id: "N-004",
-    title: "Reminder",
-    description: "Please check the current status of INC-003.",
-    status: "Monitoring",
-    incidentId: "INC-003",
-    time: "2 hours ago",
-    read: true,
-  },
-];
-
-const statusHistory: StatusHistory[] = [
-  {
-    status: "Assigned",
-    time: "Sep 25, 2026, 12:25 AM",
-    comment: "Assignment created",
-  },
-  {
-    status: "Ongoing",
-    time: "",
-    comment: "Field worker started task",
-  },
-  {
-    status: "Resolved",
-    time: "",
-    comment: "Assignment completed",
-  },
-];
-
-// #endregion 
-
-/* -----------------------------
-   HELPERS
------------------------------ */
-
-function statusClasses(status: Status) {
-  switch (status) {
-    case "Active":
-      return "bg-red-50 text-red-700 ring-red-200";
-
-    case "Monitoring":
-      return "bg-amber-50 text-amber-700 ring-amber-200";
-
-    case "Ongoing":
-      return "bg-indigo-50 text-indigo-700 ring-indigo-200";
-
-    case "Resolved":
-      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  }
-}
-
-function statusDot(status: Status) {
-  switch (status) {
-    case "Active":
-      return "bg-red-500";
-
-    case "Monitoring":
-      return "bg-amber-500";
-
-    case "Ongoing":
-      return "bg-indigo-500";
-
-    case "Resolved":
-      return "bg-emerald-500";
-  }
-}
-
-function StatusBadge({ status }: { status: Status }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${statusClasses(
-        status
-      )}`}
-    >
-      <span className={`h-2 w-2 rounded-full ${statusDot(status)}`} />
-      {status}
-    </span>
-  );
-}
-
-function Icon({
-  name,
-  className = "h-5 w-5",
-}: {
-  name: "home" | "task" | "notification" | "users" | "search" | "arrow" | "history";
-  className?: string;
-}) {
-  if (name === "home") {
-    return (
-      <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
-      <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    </svg>
-    );
-  }
-
-  if (name === "task") {
-    return (
-      <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-      <path d="M12 11h4" />
-      <path d="M12 16h4" />
-      <path d="M8 11h.01" />
-      <path d="M8 16h.01" />
-    </svg>
-    );
-  }
-
-  if (name === "notification") {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-      >
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-        <path d="M10 21h4" />
-      </svg>
-    );
-  }
-
-  if (name === "users") {
-    return (
-      <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M18 21a8 8 0 0 0-16 0" />
-      <circle cx="10" cy="8" r="5" />
-      <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
-    </svg>
-    );
-  }
-
-  if (name === "history") { 
-    return ( 
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-      <path d="M12 7v5l4 2" />
-    </svg>
-    );
-    }
-
-  if (name === "search") {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={className}
-      >
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-4-4" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={className}
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
-
-/* -----------------------------
-   MAIN PAGE
------------------------------ */
+// mga types, data na kinuha sa database.tsx
+import { 
+  Status,
+  Page,
+  Task,
+  Notification,
+  HistoryLog,
+  StatusHistory,
+  initialTasks,
+  initialNotifications,
+  statusHistory,
+  Icon,
+  StatusBadge,
+} from "./database";
+import { HomePage } from "./HomePage";
+import { TasksPage } from "./TasksPage";
+import { NotificationsPage } from "./NotificationsPage";
+import { TeamPage } from "./TeamPage";
+import { HistoryPage } from "./HistoryPage";
 
 export default function Home() {
   const [page, setPage] = useState<Page>("home");
-
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-
   const [notifications, setNotifications] =
     useState<Notification[]>(initialNotifications);
-
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-
   const [search, setSearch] = useState("");
-
   const [taskFilter, setTaskFilter] = useState("All");
-
   const [newStatus, setNewStatus] = useState<Status>("Active");
-
   const [remarks, setRemarks] = useState("");
-
   const [message, setMessage] = useState("");
-
+  const [notifMessage, setNotifMessage] = useState("");
   const [historyLogs, setHistoryLogs] = useState<HistoryLog[]>([]);
-
   const [historySearch, setHistorySearch] = useState("");
-
-  const [showUndo, setShowUndo] = useState(false);
 
   /* -----------------------------
      COUNTS
   ----------------------------- */
-
   const myTasks = useMemo(
-    () => tasks.filter((task) => task.status !== "Resolved"),
+    () => tasks.filter((task) => task.AssignedStatus !== "Resolved"),
     [tasks]
   );
 
   const activeTasks = useMemo(
-    () => tasks.filter((task) => task.status === "Active"),
+    () =>
+      tasks.filter(
+        (task) =>
+          task.status === "Active" && task.AssignedStatus !== "Resolved"
+      ),
     [tasks]
   );
 
   const monitoringTasks = useMemo(
-    () => tasks.filter((task) => task.status === "Monitoring"),
+    () =>
+      tasks.filter(
+        (task) =>
+          task.status === "Monitoring" && task.AssignedStatus !== "Resolved"
+      ),
     [tasks]
   );
 
   const resolvedTasks = useMemo(
-    () => tasks.filter((task) => task.status === "Resolved"),
+    () => tasks.filter((task) => task.AssignedStatus === "Resolved"),
     [tasks]
   );
 
@@ -397,187 +71,158 @@ export default function Home() {
     (notification) => !notification.read
   ).length;
 
+  const unreadHistoryCount = historyLogs.filter((log) => !log.read).length;
+
   /* -----------------------------
      FILTER TASKS
   ----------------------------- */
-
   const filteredTasks = useMemo(() => {
+  const searchTerm = search.toLowerCase().trim();
+
+  // SEARCH ALL TASKS
+  // Ignore the selected filter when searching
+  if (searchTerm) {
     return tasks.filter((task) => {
-      const matchesSearch =
-        task.id.toLowerCase().includes(search.toLowerCase()) ||
-        task.location.toLowerCase().includes(search.toLowerCase()) ||
-        task.type.toLowerCase().includes(search.toLowerCase());
-
-      const matchesFilter =
-        taskFilter === "All"
-        ? task.status !== "Resolved"
-        : task.status === taskFilter;
-
-      return matchesSearch && matchesFilter;
+      return (
+        task.id.toLowerCase().includes(searchTerm) ||
+        task.location.toLowerCase().includes(searchTerm) ||
+        task.type.toLowerCase().includes(searchTerm)
+      );
     });
-  }, [tasks, search, taskFilter]);
+  }
 
+  // NO SEARCH → USE FILTER
+  return tasks.filter((task) => {
+    if (taskFilter === "All") {
+      // Show unresolved tasks
+      return task.AssignedStatus !== "Resolved";
+    }
+
+    if (taskFilter === "Resolved") {
+      // Show resolved field-worker assignments
+      return task.AssignedStatus === "Resolved";
+    }
+
+    if (
+      taskFilter === "Assigned" ||
+      taskFilter === "Ongoing"
+    ) {
+      // Use AssignedStatus
+      return task.AssignedStatus === taskFilter;
+    }
+
+    if (
+      taskFilter === "Active" ||
+      taskFilter === "Monitoring"
+    ) {
+      // ang original status ay ganon parin,
+      // pero itatago sya pag resolved na.
+      // at ilalagay sa resolved filter
+      return (
+        task.status === taskFilter &&
+        task.AssignedStatus !== "Resolved"
+      );
+    }
+
+    return false;
+  });
+}, [tasks, search, taskFilter]);
 
   /* -----------------------------
-    FILTER HISTORY LOGS
+     FILTER HISTORY LOGS
   ----------------------------- */
   const filteredHistoryLogs = historyLogs.filter((log) => {
-  const search = historySearch.toLowerCase();
+    const term = historySearch.toLowerCase();
 
-  return (
-      log.incidentId.toLowerCase().includes(search) ||
-      log.action.toLowerCase().includes(search) ||
-      log.status.toLowerCase().includes(search)
+    return (
+      log.incidentId.toLowerCase().includes(term) ||
+      log.action.toLowerCase().includes(term) ||
+      log.AssignedStatus.toLowerCase().includes(term)
     );
   });
 
   /* -----------------------------
-    CALCULATE CURRENT TIME
+     CALCULATE CURRENT TIME
   ----------------------------- */
   const formatTimeAgo = (time: string) => {
-  const seconds = Math.floor(
-      (Date.now() - new Date(time).getTime()) / 1000
-    );
+    const seconds = Math.floor((Date.now() - new Date(time).getTime()) / 1000);
 
-    if (seconds < 5) {
-      return "Just now";
-    }
-
-    if (seconds < 60) {
-      return `${seconds} seconds ago`;
-    }
+    if (seconds < 5) return "Just now";
+    if (seconds < 60) return `${seconds} seconds ago`;
 
     const minutes = Math.floor(seconds / 60);
-
-    if (minutes < 60) {
-      return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
-    }
+    if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
 
     const hours = Math.floor(minutes / 60);
-
-    if (hours < 24) {
-      return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
-    }
+    if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
 
     const days = Math.floor(hours / 24);
-
     return `${days} ${days === 1 ? "day" : "days"} ago`;
   };
 
   /* -----------------------------
      OPEN TASK
   ----------------------------- */
-
   function openTask(task: Task) {
     setSelectedTask(task);
-    setNewStatus(task.status);
+    setNewStatus(task.AssignedStatus);
     setRemarks(task.remarks || "");
     setMessage("");
   }
 
   /* -----------------------------
-     UPDATE TASK
+     UPDATE STATUS
   ----------------------------- */
-
-  function updateTask() {
-    if (!selectedTask) return;
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTask.id
-          ? {
-              ...task,
-              status: newStatus,
-              remarks,
-            }
-          : task
-      )
+  const updateStatus = (id: string, updates: Partial<Task>) => {
+    setTasks((prev) =>
+      prev.map((task) => (task.id === id ? { ...task, ...updates } : task))
     );
 
     setSelectedTask((current) =>
-      current
-        ? {
-            ...current,
-            status: newStatus,
-            remarks,
-          }
-        : null
+      current && current.id === id ? { ...current, ...updates } : current
     );
 
-    
-  }
-  
-  // UPDATE STATUS FUNCTION
-  const updateStatus = (id: string, updates: Partial<Task>) => {
-  setTasks((prev) =>
-    prev.map((task) =>
-      task.id === id
-        ? { ...task, ...updates }
-        : task
-    )
-  );
+    if (updates.AssignedStatus) {
+      const assignedStatus = updates.AssignedStatus;
+      setHistoryLogs((current) => [
+        {
+          id: `H-${Date.now()}`,
+          incidentId: id,
+          action: "Assignment Status Updated",
+          AssignedStatus: assignedStatus,
+          time: new Date().toISOString(),
+          remarks: remarks || "No remarks provided",
+          read: false,
+        },
+        ...current,
+      ]);
+    }
 
-  setSelectedTask((current) =>
-    current && current.id === id
-      ? { ...current, ...updates }
-      : current
-  );
-
-  if (updates.status) {
-  const status = updates.status;
-
-  setHistoryLogs((current) => [
-    {
-      id: `H-${Date.now()}`,
-      action: `Status changed to ${status}`,
-      status: status,
-      incidentId: id,
-      time: new Date().toISOString(),
-    },
-    ...current,
-  ]);
-}
-
-  setMessage(`${id} successfully updated.`);
-};
+    setMessage(`${id} successfully updated.`);
+  };
 
   /* -----------------------------
      STATUS OPTIONS
   ----------------------------- */
-
-  const getNextStatus = (status: Status): Status | null => {
-    switch (status) {
-      case "Active":
-      case "Monitoring":
+  const getNextStatus = (assignedStatus: Status): Status | null => {
+    switch (assignedStatus) {
+      case "Assigned":
         return "Ongoing";
-
       case "Ongoing":
         return "Resolved";
-
       case "Resolved":
         return null;
-
       default:
         return null;
     }
   };
 
   /* -----------------------------
-     MARK NOTIFICATIONS READ
+     NOTIFICATIONS
   ----------------------------- */
-
   function markNotificationsRead() {
     setNotifications((current) =>
-      current.map((notification) => ({
-        ...notification,
-        read: true,
-      }))
-    );
-  }
-
-  function deleteNotification(id: string) {
-    setNotifications((current) =>
-      current.filter((notification) => notification.id !== id)
+      current.map((notification) => ({ ...notification, read: true }))
     );
   }
 
@@ -585,568 +230,21 @@ export default function Home() {
     setNotifications((current) =>
       current.filter((notification) => !notification.read)
     );
-    function showMessage(text: string) {
-      setMessage(text);
 
-      setTimeout(() => {
-        setMessage("");
-      }, 5000);
-    }
-
-    showMessage("Read notifications deleted successfully.");
+    setNotifMessage("Read notifications deleted successfully.");
+    setTimeout(() => setNotifMessage(""), 5000);
   }
 
   /* -----------------------------
-     DASHBOARD CARD
+     TASK DETAILS lalabas pag may pinindot na task
   ----------------------------- */
-
-  function DashboardCard({
-    title,
-    count,
-    description,
-    background,
-    onClick,
-  }: {
-    title: string;
-    count: number;
-    description: string;
-    background: string;
-    onClick: () => void;
-  }) {
-    return (
-      <button
-        onClick={onClick}
-        className="group relative min-h-[180px] overflow-hidden rounded-2xl text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg"
-        style={{
-          backgroundImage: `url("${background}")`,
-          backgroundSize: "100% 100%",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        <div className="absolute inset-0 bg-slate-950/45 transition group-hover:bg-slate-950/35" />
-
-        <div className="relative flex h-full flex-col justify-between p-5 text-white">
-          <div>
-            <p className="text-sm font-medium text-white/80">{title}</p>
-
-            <p className="mt-2 text-4xl font-bold tracking-tight">{count}</p>
-
-            <p className="mt-1 text-sm text-white/80">{description}</p>
-          </div>
-
-          <div className="flex items-center gap-1 text-sm font-semibold">
-            View tasks
-            <Icon name="arrow" className="h-4 w-4 transition group-hover:translate-x-1" />
-          </div>
-        </div>
-      </button>
-    );
-  }
-
-  /* -----------------------------
-     HOME PAGE
-  ----------------------------- */
-
-  function renderHome() {
-    return (
-      <div className="space-y-7">
-        {/* Header */}
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-sm font-medium text-blue-600">
-              Field Worker Portal
-            </p>
-
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Dashboard
-            </h1>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Monitor and manage your assigned incidents.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setPage("history")}
-            className="relative flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
-          >
-            <Icon name="history" className="h-5 w-5" />
-
-            History Log
-          </button>
-        </div>
-
-        {/* Dashboard Cards */}
-        <section className="grid grid-cols-2 grid-rows-2 gap-5">
-          <DashboardCard
-            title="My Tasks"
-            count={myTasks.length}
-            description="All unresolved assignments"
-            background="/Images/mytaskbg.jpg"
-            onClick={() => {
-              setTaskFilter("All");
-              setPage("tasks");
-            }}
-          />
-
-          <DashboardCard
-            title="Active"
-            count={activeTasks.length}
-            description="Incidents requiring action"
-            background="/Images/activebg.png"
-            onClick={() => {
-              setTaskFilter("Active");
-              setPage("tasks");
-            }}
-          />
-
-          <DashboardCard
-            title="Monitoring"
-            count={monitoringTasks.length}
-            description="Incidents being monitored"
-            background="/Images/monitoringbg.png"
-            onClick={() => {
-              setTaskFilter("Monitoring");
-              setPage("tasks");
-            }}
-          />
-
-          <DashboardCard
-            title="Resolved"
-            count={resolvedTasks.length}
-            description="Completed incidents"
-            background="/Images/resolvedbg.png"
-            onClick={() => {
-              setTaskFilter("Resolved");
-              setPage("tasks");
-            }}
-          />
-        </section>
-
-        {/* Recent Tasks */}
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center">
-            <div>
-              <h2 className="font-bold text-slate-900">Recent Tasks</h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Your latest assigned incidents
-              </p>
-            </div>
-
-            <button
-              onClick={() => setPage("tasks")}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-            >
-              View all
-            </button>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {myTasks.slice(0, 4).map((task) => (
-              <button
-                key={task.id}
-                onClick={() => openTask(task)}
-                className="flex w-full min-w-0 flex-col gap-3 p-4 text-left transition hover:bg-slate-50 sm:p-5 md:flex-row md:items-center md:justify-between"
-              >
-                {/* Task information */}
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-
-                  {/* ID NUMBER tinatanggal din ung INC. para number lng lumbas */}
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-blue-700 sm:h-11 sm:w-11">
-                    {task.id.replace("INC-", "")}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-slate-900">
-                      {task.type}
-                    </p>
-
-                    <p className="mt-1 truncate text-xs text-slate-500 sm:text-sm">
-                      {task.id} · {task.location}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Task status information */}
-                <div className="flex min-w-0 items-center justify-between gap-3 pl-[52px] sm:pl-[55px] md:shrink-0 md:justify-end md:pl-0">
-                  
-                  {/* Time Added */}
-                    <div className="shrink-0 text-left md:text-right">
-                      <p className="text-[10px] text-slate-400 sm:text-xs">
-                        Uploaded
-                      </p>
-
-                      <p className="text-xs font-semibold text-slate-700 sm:text-sm">
-                        {task.time}
-                      </p>
-                    </div>
-
-                    {/* ETR */}
-                    <div className="shrink-0 text-left md:text-right">
-                      <p className="text-[10px] text-slate-400 sm:text-xs">
-                        ETR
-                      </p>
-
-                      <p className="text-xs font-semibold text-slate-700 sm:text-sm">
-                        {task.etr}
-                      </p>
-                    </div>
-
-                  <StatusBadge status={task.status} />
-
-                  <Icon
-                    name="arrow"
-                    className="hidden h-5 w-5 shrink-0 text-slate-400 md:block"
-                  />
-                </div>
-              </button>
-            ))}
-
-            {myTasks.length === 0 && (
-              <div className="p-10 text-center text-sm text-slate-500">
-                No unresolved tasks.
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Team Task Table */}
-        <section className="w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-          {/* Header */}
-          <div className="border-b border-slate-100 p-4 sm:p-5">
-            <h2 className="font-bold text-slate-900">
-              Team Task Overview
-            </h2>
-
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Current incident status assigned to Team Alpha
-            </p>
-          </div>
-
-
-          {/* ================= MOBILE VIEW ================= */}
-          <div className="divide-y divide-slate-100 md:hidden">
-
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="space-y-3 p-4"
-              >
-
-                {/* Incident + Status */}
-                <div className="flex min-w-0 items-center justify-between gap-3">
-
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-900">
-                      {task.id}
-                    </p>
-
-                    <p className="mt-1 truncate text-xs text-slate-500">
-                      {task.location}
-                    </p>
-                  </div>
-
-                  <div className="shrink-0">
-                    <StatusBadge status={task.status} />
-                  </div>
-
-                </div>
-
-
-                {/* Details */}
-                <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3">
-
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                      ETR
-                    </p>
-
-                    <p className="mt-1 truncate text-xs font-semibold text-slate-700">
-                      {task.etr}
-                    </p>
-                  </div>
-
-
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                      Team
-                    </p>
-
-                    <p className="mt-1 truncate text-xs font-semibold text-slate-700">
-                      {task.team}
-                    </p>
-                  </div>
-
-                </div>
-
-              </div>
-            ))}
-
-          </div>
-
-
-          {/* ================= DESKTOP VIEW ================= */}
-          <div className="hidden overflow-x-auto md:block">
-
-            <table className="w-full text-left">
-
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-
-                <tr>
-
-                  <th className="px-5 py-4 font-semibold">
-                    Incident
-                  </th>
-
-                  <th className="px-5 py-4 font-semibold">
-                    Location
-                  </th>
-
-                  <th className="px-5 py-4 font-semibold">
-                    Status
-                  </th>
-
-                  <th className="px-5 py-4 font-semibold">
-                    ETR
-                  </th>
-
-                  <th className="px-5 py-4 font-semibold">
-                    Team
-                  </th>
-
-                </tr>
-
-              </thead>
-
-
-              <tbody className="divide-y divide-slate-100">
-
-                {tasks.map((task) => (
-
-                  <tr
-                    key={task.id}
-                    className="transition hover:bg-slate-50"
-                  >
-
-                    <td className="px-5 py-4 font-semibold text-slate-900">
-                      {task.id}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-slate-600">
-                      {task.location}
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <StatusBadge status={task.status} />
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-slate-600">
-                      {task.etr}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-slate-600">
-                      {task.team}
-                    </td>
-
-                  </tr>
-
-                ))}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </section>
-      </div>
-    );
-  }
-
-  /* -----------------------------
-     TASK PAGE
-  ----------------------------- */
-
-  function renderTasks() {
-    const filters = [
-      "All",
-      "Active",
-      "Monitoring",
-      "Ongoing",
-      "Resolved",
-    ];
-
-    return (
-      <div className="space-y-6">
-        <div>
-          <p className="text-sm font-medium text-blue-600">
-            Field Worker Portal
-          </p>
-
-          <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
-            Tasks
-          </h1>
-
-          <p className="mt-1 text-sm text-slate-500">
-            View and manage your assigned incidents.
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Icon
-            name="search"
-            className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
-          />
-
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search incident ID, location, or incident type..."
-            className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Filters */}
-        <div className="flex w-full min-w-0 flex-wrap gap-2">
-            {filters.map((filter) => {
-              const active = taskFilter === filter;
-
-              return (
-                <button
-                  key={filter}
-                  onClick={() => setTaskFilter(filter)}
-                  className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:py-2.5 sm:text-sm ${
-                    active
-                      ? "bg-[#0f2a5c] text-white shadow-sm"
-                      : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-600"
-                  }`}
-                >
-                  {filter}
-
-                  <span
-                    className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] sm:ml-2 sm:text-[11px] ${
-                      active
-                        ? "bg-white/15 text-white"
-                        : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    {filter === "All"
-                      ? filteredTasks.length
-                      : tasks.filter((task) => task.status === filter).length}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-        {/* Task Cards */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          {filteredTasks.map((task) => (
-            <button
-              key={task.id}
-              onClick={() => openTask(task)}
-              className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                    {task.id}
-                  </p>
-
-                  <h2 className="mt-2 font-bold text-slate-900">
-                    {task.type}
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    {task.location}
-                  </p>
-                </div>
-
-                <StatusBadge status={task.status} />
-              </div>
-
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-slate-400">Estimated Time</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-700">
-                    {task.etr}
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-slate-400">Team</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-700">
-                    {task.team}
-                  </p>
-                </div>
-              </div>
-
-              {task.remarks && (
-                <div className="mt-3 rounded-xl bg-blue-50 p-3">
-                  <p className="text-xs font-semibold text-blue-700">
-                    Remarks
-                  </p>
-
-                  <p className="mt-1 text-sm text-blue-900">
-                    {task.remarks}
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-blue-600">
-                View details
-                <Icon
-                  name="arrow"
-                  className="h-4 w-4 transition group-hover:translate-x-1"
-                />
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {filteredTasks.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-            <p className="font-semibold text-slate-700">
-              No tasks found
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Try another search term or filter.
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  /* -----------------------------
-     TASK DETAILS
-  ----------------------------- */
-
   function renderTaskDetails() {
-  if (!selectedTask) return null;
+    if (!selectedTask) return null;
 
-  const statusSteps = [
-    "Assigned",
-    "Ongoing",
-    "Resolved",
-  ];
-
-
-
-  const trackerStatus =
-    selectedTask.status === "Active" ||
-    selectedTask.status === "Monitoring"
-      ? "Assigned"
-      : selectedTask.status;
-
-  const currentIndex = statusSteps.indexOf(trackerStatus);
-  const nextStatus = getNextStatus(selectedTask.status);
+    const statusSteps = ["Assigned", "Ongoing", "Resolved"];
+    const trackerStatus = selectedTask.AssignedStatus;
+    const currentIndex = statusSteps.indexOf(trackerStatus);
+    const nextStatus = getNextStatus(selectedTask.AssignedStatus);
 
     return (
       <div className="mx-auto max-w-4xl space-y-6">
@@ -1158,41 +256,41 @@ export default function Home() {
           Back to Tasks
         </button>
 
-        {/* Header */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
                 {selectedTask.id}
               </p>
-
               <h1 className="mt-2 text-2xl font-bold text-slate-900">
                 {selectedTask.type}
               </h1>
-
               <p className="mt-1 text-sm text-slate-500">
                 {selectedTask.location}
               </p>
             </div>
-
-            <StatusBadge status={selectedTask.status} />
+            <StatusBadge status={selectedTask.AssignedStatus} />
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 p-4">
+              <p className="text-xs text-slate-400">Status</p>
+              <p className="mt-1 font-semibold text-slate-800">
+                <StatusBadge status={selectedTask.status} />
+              </p>
+            </div>
             <div className="rounded-xl bg-slate-50 p-4">
               <p className="text-xs text-slate-400">Estimated Time</p>
               <p className="mt-1 font-semibold text-slate-800">
                 {selectedTask.etr}
               </p>
             </div>
-
             <div className="rounded-xl bg-slate-50 p-4">
               <p className="text-xs text-slate-400">Assigned Team</p>
               <p className="mt-1 font-semibold text-slate-800">
                 {selectedTask.team}
               </p>
             </div>
-
             <div className="rounded-xl bg-slate-50 p-4">
               <p className="text-xs text-slate-400">Field Action</p>
               <p className="mt-1 font-semibold text-slate-800">
@@ -1202,25 +300,18 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Status Tracker */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="font-bold text-slate-900">Status Tracker</h2>
 
           <div className="mt-8">
             <div className="relative">
-              {/* Connecting line */}
               <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-slate-200" />
 
               <div className="relative space-y-7">
-                {statusHistory.map((step, index) => {
+                {statusHistory.map((step: StatusHistory, index: number) => {
                   const completed = index <= currentIndex;
-
                   return (
-                    <div
-                      key={step.status}
-                      className="relative flex gap-4"
-                    >
-                      {/* Number circle */}
+                    <div key={step.status} className="relative flex gap-4">
                       <div
                         className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-4 border-white text-xs font-bold shadow-sm ${
                           completed
@@ -1231,22 +322,17 @@ export default function Home() {
                         {index + 1}
                       </div>
 
-                      {/* Status information */}
                       <div className="min-w-0 pt-0.5">
                         <p
                           className={`text-sm font-semibold ${
-                            completed
-                              ? "text-[#0f2a5c]"
-                              : "text-slate-400"
+                            completed ? "text-[#0f2a5c]" : "text-slate-400"
                           }`}
                         >
                           {step.status}
                         </p>
-
                         <p className="mt-1 text-xs text-slate-400">
                           {step.time || "Waiting..."}
                         </p>
-
                         <p className="mt-1 text-xs text-slate-400">
                           {step.comment}
                         </p>
@@ -1259,11 +345,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Update */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div>
             <h2 className="font-bold text-slate-900">Update Task</h2>
-
             <p className="mt-1 text-sm text-slate-500">
               Update the current status and add field remarks.
             </p>
@@ -1271,14 +355,9 @@ export default function Home() {
 
           <div className="mt-5 space-y-5">
             <div>
-              
-            </div>
-
-            <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
                 Remarks
               </label>
-
               <textarea
                 value={remarks}
                 onChange={(event) => setRemarks(event.target.value)}
@@ -1288,17 +367,16 @@ export default function Home() {
               />
             </div>
 
-
-              {nextStatus && (
-                <button
-                  onClick={() =>
-                    updateStatus(selectedTask.id, { status: nextStatus })
-                  }
-                  className="cursor-pointer w-full rounded-xl bg-[#0f2a5c] px-5 py-3 font-semibold text-white transition hover:bg-[#163b7c] active:scale-[0.99]"
-                >
-                  Mark as {nextStatus}
-                </button>
-              )}
+            {nextStatus && (
+              <button
+                onClick={() =>
+                  updateStatus(selectedTask.id, { AssignedStatus: nextStatus })
+                }
+                className="cursor-pointer w-full rounded-xl bg-[#0f2a5c] px-5 py-3 font-semibold text-white transition hover:bg-[#163b7c] active:scale-[0.99]"
+              >
+                Mark as {nextStatus}
+              </button>
+            )}
 
             {message && (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
@@ -1312,339 +390,74 @@ export default function Home() {
   }
 
   /* -----------------------------
-     NOTIFICATIONS
+     PAGE CONTENT SWITCH
   ----------------------------- */
-
-  function renderNotifications() {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-sm font-medium text-blue-600">
-              Field Worker Portal
-            </p>
-
-            <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
-              Notifications
-            </h1>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Stay updated with your assigned incidents.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={markNotificationsRead}
-              className="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
-            >
-              Mark all as read
-            </button>
-
-            <button
-              onClick={deleteReadNotifications}
-              className="w-fit rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
-            >
-              Delete read
-            </button>
-          </div>
-
-          {message && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
-                {message}
-              </div>
-            )}
-        </div>
-
-        <div className="space-y-3">
-          {notifications.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-              <Icon
-                name="notification"
-                className="mx-auto h-10 w-10 text-slate-300"
-              />
-
-              <p className="mt-3 text-sm font-semibold text-slate-600">
-                No notifications
-              </p>
-
-              <p className="mt-1 text-sm text-slate-400">
-                You don't have any notifications yet.
-              </p>
-            </div>
-          ) : (
-            notifications.map((notification) => (
-              <button
-                key={notification.id}
-                onClick={() => {
-                  const task = tasks.find(
-                    (item) => item.id === notification.incidentId
-                  );
-
-                  if (task) {
-                    openTask(task);
-                  }
-
-                  setNotifications((current) =>
-                    current.map((item) =>
-                      item.id === notification.id
-                        ? { ...item, read: true }
-                        : item
-                    )
-                  );
-                }}
-                className={`w-full rounded-2xl border p-5 text-left transition hover:border-blue-200 hover:shadow-sm ${
-                  notification.read
-                    ? "border-slate-200 bg-white"
-                    : "border-blue-100 bg-blue-50/50"
-                }`}
-              >
-                <div className="flex gap-4">
-                  <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                      notification.read
-                        ? "bg-slate-100 text-slate-500"
-                        : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
-                    <Icon name="notification" className="h-5 w-5" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col justify-between gap-2 sm:flex-row">
-                      <div>
-                        <p className="font-semibold text-slate-900">
-                          {notification.title}
-                        </p>
-
-                        <p className="mt-1 text-sm text-slate-500">
-                          {notification.description}
-                        </p>
-                      </div>
-
-                      {!notification.read && (
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600" />
-                      )}
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                      <StatusBadge status={notification.status} />
-
-                      <span className="text-xs text-slate-400">
-                        {notification.incidentId}
-                      </span>
-
-                      <span className="text-xs text-slate-400">
-                        {notification.time}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  /* -----------------------------
-     TEAM PROFILE
-  ----------------------------- */
-
-  function renderTeam() {
-    return (
-      <div className="space-y-6">
-        <div>
-          <p className="text-sm font-medium text-blue-600">
-            Field Worker Portal
-          </p>
-
-          <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
-            Team Profile
-          </h1>
-
-          <p className="mt-1 text-sm text-slate-500">
-            View your assigned Team Alpha members.
-          </p>
-        </div>
-
-        {/* Team Header */}
-        <section className="overflow-hidden rounded-2xl bg-[#0f2a5c] p-6 text-white shadow-sm">
-          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-sm font-medium text-blue-200">
-                Current Team
-              </p>
-
-              <h2 className="mt-1 text-2xl font-bold">Team Alpha</h2>
-
-              <p className="mt-1 text-sm text-blue-100">
-                Field Operations Team
-              </p>
-            </div>
-            
-          </div>
-        </section>
-
-        {/* INFO */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-1">
-          
-            <button
-                className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
-              >
-                <Icon name="task" className="h-5 w-5" />
-
-                Change Password
-            </button>
-
-            <button
-                onClick={() => setPage("history")}
-                className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
-              >
-                <Icon name="history" className="h-5 w-5" />
-
-                History Log
-            </button>
-
-            <button
-              className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
-            >
-              <span>↪</span>
-              <span>Logout</span>
-            </button>
-
-        </section>
-      </div>
-    );
-  }
-
-  /*------------------------------
-    HISTORY LOG
-  -------------------------------*/
-  
-  const renderHistory = () => (
-  <section className="space-y-5">
-    {/* Header */}
-    <div>
-      <h1 className="text-2xl font-bold text-slate-900">
-        History Log
-      </h1>
-
-      <p className="mt-1 text-sm text-slate-500">
-        Track changes and actions made to incidents.
-      </p>
-    </div>
-
-    {/* Search Bar */}
-    <div className="relative">
-      <Icon
-        name="search"
-        className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
-      />
-
-      <input
-        type="text"
-        value={historySearch}
-        onChange={(e) => setHistorySearch(e.target.value)}
-        placeholder="Search history..."
-        className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-      />
-    </div>
-
-    {/* History List */}
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      {filteredHistoryLogs.length > 0 ? (
-        <div className="divide-y divide-slate-100">
-          {filteredHistoryLogs.map((log) => (
-            <button
-              key={log.id}
-              onClick={() => {
-                const task = tasks.find(
-                  (task) => task.id === log.incidentId
-                );
-
-                if (task) {
-                  openTask(task);
-                }
-              }}
-              className="w-full p-4 text-left transition hover:bg-slate-50 sm:p-5"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-900">
-                    {log.action}
-                  </p>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Incident: {log.incidentId}
-                  </p>
-
-                  <div className="mt-2">
-                    <StatusBadge status={log.status} />
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-xs text-slate-400">
-                    {formatTimeAgo(log.time)}
-                  </span>
-
-                  <Icon
-                    name="arrow"
-                    className="h-5 w-5 text-slate-400"
-                  />
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="p-8 text-center">
-          <p className="font-semibold text-slate-700">
-            No history found
-          </p>
-
-          <p className="mt-1 text-sm text-slate-400">
-            Try searching for another incident or status.
-          </p>
-        </div>
-      )}
-    </div>
-  </section>
-);
-
-  /* -----------------------------
-     PAGE CONTENT
-  ----------------------------- */
-
   let content;
 
   if (selectedTask) {
     content = renderTaskDetails();
   } else if (page === "home") {
-    content = renderHome();
+    content = (
+      <HomePage
+        tasks={tasks}
+        myTasks={myTasks}
+        activeTasks={activeTasks}
+        monitoringTasks={monitoringTasks}
+        resolvedTasks={resolvedTasks}
+        unreadHistoryCount={unreadHistoryCount}
+        setPage={setPage}
+        setHistoryLogs={setHistoryLogs}
+        setTaskFilter={setTaskFilter}
+        openTask={openTask}
+      />
+    );
   } else if (page === "tasks") {
-    content = renderTasks();
+    content = (
+      <TasksPage
+        tasks={tasks}
+        filteredTasks={filteredTasks}
+        search={search}
+        setSearch={setSearch}
+        taskFilter={taskFilter}
+        setTaskFilter={setTaskFilter}
+        openTask={openTask}
+      />
+    );
   } else if (page === "notifications") {
-    content = renderNotifications();
+    content = (
+      <NotificationsPage
+        tasks={tasks}
+        notifications={notifications}
+        setNotifications={setNotifications}
+        notifMessage={notifMessage}
+        markNotificationsRead={markNotificationsRead}
+        deleteReadNotifications={deleteReadNotifications}
+        openTask={openTask}
+      />
+    );
   } else if (page === "history") {
-    content = renderHistory();
+    content = (
+      <HistoryPage
+        tasks={tasks}
+        filteredHistoryLogs={filteredHistoryLogs}
+        historySearch={historySearch}
+        setHistorySearch={setHistorySearch}
+        formatTimeAgo={formatTimeAgo}
+        openTask={openTask}
+      />
+    );
   } else {
-    content = renderTeam();
+    content = <TeamPage setPage={setPage} />;
   }
 
   /* -----------------------------
      MAIN LAYOUT
   ----------------------------- */
-
   return (
     <div className="min-h-screen bg-slate-50 pb-24 text-slate-900">
       {/* TOP BAR */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
-
-          {/* Logo / Brand */}
           <button
             onClick={() => {
               setSelectedTask(null);
@@ -1655,27 +468,22 @@ export default function Home() {
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0f2a5c] text-base font-black text-white sm:h-10 sm:w-10 sm:text-lg">
               💧
             </div>
-
             <div className="min-w-0 text-left">
               <p className="whitespace-nowrap text-sm font-bold text-[#0f2a5c] sm:text-base">
                 DistrictLens
               </p>
-
               <p className="text-[11px] text-slate-400">
                 Field Worker Portal
               </p>
             </div>
           </button>
 
-          {/* Right side */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
-
             <button
               onClick={() => setPage("notifications")}
               className="relative rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-[#0f2a5c] sm:p-2.5"
             >
               <Icon name="notification" className="h-5 w-5" />
-
               {unreadNotifications > 0 && (
                 <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" />
               )}
@@ -1684,9 +492,7 @@ export default function Home() {
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 sm:h-10 sm:w-10 sm:text-sm">
               TA
             </div>
-
           </div>
-
         </div>
       </header>
 
@@ -1741,14 +547,12 @@ export default function Home() {
           >
             <div className="relative">
               <Icon name="notification" className="h-5 w-5" />
-
               {unreadNotifications > 0 && (
                 <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
                   {unreadNotifications}
                 </span>
               )}
             </div>
-
             Notifications
           </button>
 
