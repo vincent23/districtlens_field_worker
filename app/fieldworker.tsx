@@ -416,31 +416,86 @@ function DashboardCard({
   background: string;
   onClick: () => void;
 }) {
+  const styles: Record<string, { color: string; light: string }> = {
+    "My Tasks": {
+      color: "#174477",
+      light: "#edf4ff",
+    },
+    Active: {
+      color: "#dc0000",
+      light: "#fff1f1",
+    },
+    Monitoring: {
+      color: "#ff9900",
+      light: "#fff8e8",
+    },
+    Resolved: {
+      color: "#009b70",
+      light: "#eafbf4",
+    },
+  };
+
+  const style = styles[title] ?? styles["My Tasks"];
+
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="group relative min-h-[180px] overflow-hidden rounded-2xl text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg"
-      style={{
-        backgroundImage: `url("${background}")`,
-        backgroundSize: "100% 100%",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
+      className="group relative min-h-[180px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
     >
-      <div className="absolute inset-0 bg-slate-950/45 transition group-hover:bg-slate-950/35" />
+      {/* Background image: visible on hover */}
+      {background && (
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-0 transition-opacity duration-300 group-hover:opacity-20"
+          style={{ backgroundImage: `url("${background}")` }}
+        />
+      )}
 
-      <div className="relative flex h-full flex-col justify-between p-5 text-white">
-        <div>
-          <p className="text-sm font-medium text-white/80">{title}</p>
-          <p className="mt-2 text-4xl font-bold tracking-tight">{count}</p>
-          <p className="mt-1 text-sm text-white/80">{description}</p>
+      {/* Colored top border */}
+      <div
+        className="absolute top-0 right-0 left-0 z-10 h-[3px]"
+        style={{ backgroundColor: style.color }}
+      />
+
+      {/* Card content */}
+      <div className="relative z-10">
+        {/* Title and dot box */}
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-semibold text-slate-700">
+            {title}
+          </p>
+
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: style.light }}
+          >
+            <div
+              className="h-3.5 w-3.5 rounded-sm"
+              style={{ backgroundColor: style.color }}
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 text-sm font-semibold">
+        {/* Count */}
+        <p
+          className="mt-[-5px] text-[34px] leading-tight font-bold tracking-tight"
+          style={{ color: style.color }}
+        >
+          {count}
+        </p>
+
+        {/* Description */}
+        <p className="mt-4 text-xs text-slate-500">
+          {description}
+        </p>
+
+        {/* View tasks */}
+        <div className="mt-3 flex items-center gap-1 text-sm font-semibold text-slate-700">
           View tasks
+
           <Icon
             name="arrow"
-            className="h-4 w-4 transition group-hover:translate-x-1"
+            className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
           />
         </div>
       </div>
@@ -510,7 +565,7 @@ function HomePage({
           title="My Tasks"
           count={myTasks.length}
           description="All unresolved assignments"
-          background="/Images/taskbg.png"
+          background="hover:bg-slate-50"
           onClick={() => {
             setTaskFilter("All");
             setPage("tasks");
@@ -520,7 +575,7 @@ function HomePage({
           title="Active"
           count={activeTasks.length}
           description="Incidents requiring action"
-          background="/Images/activebg.png"
+          background=""
           onClick={() => {
             setTaskFilter("Active");
             setPage("tasks");
@@ -530,7 +585,7 @@ function HomePage({
           title="Monitoring"
           count={monitoringTasks.length}
           description="Incidents being monitored"
-          background="/Images/monitoringbg.png"
+          background="/"
           onClick={() => {
             setTaskFilter("Monitoring");
             setPage("tasks");
@@ -540,7 +595,7 @@ function HomePage({
           title="Resolved"
           count={resolvedTasks.length}
           description="Completed incidents"
-          background="/Images/resolvedbg.png"
+          background="/"
           onClick={() => {
             setTaskFilter("Resolved");
             setPage("tasks");
@@ -1322,7 +1377,7 @@ export default function FieldWorker() {
           className="flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-blue-600"
         >
           <span className="text-lg">❮</span>
-          Back to Tasks
+          Back
         </button>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1598,7 +1653,7 @@ export default function FieldWorker() {
       </main>
 
       {/* BOTTOM NAV */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-2 pb-safe backdrop-blur">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 pb-5 border-t border-slate-200 bg-white/95 px-2 pb-safe backdrop-blur">
         <div className="mx-auto grid max-w-2xl grid-cols-5">
           <button
             onClick={() => {
@@ -1638,7 +1693,7 @@ export default function FieldWorker() {
             className="flex flex-col items-center gap-1 py-3 text-xs font-semibold cursor-pointer transition"
               
           >
-            <span className="flex h-8 w-13 items-center justify-center rounded-2xl bg-[#2577FF] shadow-md transition hover:bg-[#1765E8] active:scale-95">
+            <span className="flex h-8 w-13 items-center justify-center rounded-2xl bg-[#0f2a5c] shadow-md transition hover:bg-[#1765E8] active:scale-95">
               <Icon name="map" className="h-6 w-6 text-white" />
             </span>
           </button>
