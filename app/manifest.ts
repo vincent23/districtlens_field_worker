@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "DistrictLens Field Worker Portal",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
+    background_color: "#002d52",
     theme_color: "#002d52",
     orientation: "portrait",
     icons: [
