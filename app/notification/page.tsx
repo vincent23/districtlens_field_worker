@@ -35,15 +35,15 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-3 bg-linear-to-r from-[#241C70] via-[#342992] to-[#5366C8] px-6 py-6 sm:px-8 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-medium text-blue-600">
+          <p className="text-sm font-medium text-blue-100">
             Field Worker Portal
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
             Notifications
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-blue-100">
             Stay updated with your assigned incidents.
           </p>
         </div>
@@ -51,13 +51,13 @@ export default function NotificationsPage() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={markNotificationsRead}
-            className="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
+            className="w-fit rounded-xl border border-slate-200 bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
           >
             Mark all as read
           </button>
           <button
             onClick={deleteReadNotifications}
-            className="w-fit rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
+            className="w-fit rounded-xl border border-red-200 bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
           >
             Delete read
           </button>

@@ -148,11 +148,11 @@ export default function MapPage() {
 
           <div>
 
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-700">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               Field Worker Portal
             </p>
 
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#0f2a5c] sm:text-3xl">
               Tanza Water Service Map
             </h1>
 
@@ -529,7 +529,7 @@ export default function MapPage() {
                 Latest Updates
               </p>
 
-              <h2 className="mt-1 text-sm font-bold text-slate-900">
+              <h2 className="mt-1 text-sm font-bold text-[#0f2a5c]">
                 Recent Reports
               </h2>
 
@@ -574,7 +574,7 @@ export default function MapPage() {
 
                         <div className="flex items-center justify-between gap-2">
 
-                          <p className="text-xs font-semibold text-slate-800">
+                          <p className="text-xs font-semibold text-[#0f2a5c]">
                             {report.barangay}
                           </p>
 

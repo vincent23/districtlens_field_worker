@@ -772,38 +772,37 @@ export default function FieldWorkerShell({
     >
       <div className="min-h-screen bg-slate-50 pb-24 text-slate-900">
         {/* TOP BAR */}
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
           <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
             <Link
               href="/"
               onClick={() => setSelectedTask(null)}
               className="flex min-w-0 items-center gap-2 sm:gap-3"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0f2a5c] text-base font-black text-white sm:h-10 sm:w-10 sm:text-lg">
-                💧
-              </div>
+              <img
+                src="./Icons/tanza logo.webp"
+                alt="Tanza Water District Logo"
+                className="h-13 w-13 object-contain"
+              />
               <div className="min-w-0 text-left">
+                <p className="text-[11px] text-slate-400">
+                  TANZA WATER DISTRICT
+                </p>
                 <p className="whitespace-nowrap text-sm font-bold text-[#0f2a5c] sm:text-base">
                   DistrictLens
                 </p>
-                <p className="text-[11px] text-slate-400">Field Worker Portal</p>
               </div>
             </Link>
 
             <div className="flex shrink-0 items-center gap-1 sm:gap-3">
-              <Link
-                href="/notification"
-                className="relative rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-[#0f2a5c] sm:p-2.5"
-              >
-                <Icon name="notification" className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" />
-                )}
-              </Link>
 
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 sm:h-10 sm:w-10 sm:text-sm">
+              <Link
+                href="/team"
+                onClick={() => setSelectedTask(null)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 sm:h-10 sm:w-10 sm:text-sm"
+              >
                 TA
-              </div>
+              </Link>
             </div>
           </div>
         </header>
@@ -883,7 +882,7 @@ export default function FieldWorkerShell({
                   </span>
                 )}
               </div>
-              Notifications
+              Alerts
             </Link>
 
             <Link

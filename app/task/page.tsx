@@ -85,7 +85,7 @@ export default function TasksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm font-medium text-blue-600">
+        <p className="text-sm font-medium text-slate-500">
           Field Worker Portal
         </p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
