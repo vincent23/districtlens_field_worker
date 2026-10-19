@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Icon, StatusBadge, useFieldWorker } from "../components/fieldworker";
 
 //#region NOTIFICATIONS PAGE
@@ -29,12 +30,28 @@ export default function NotificationsPage() {
     setNotifMessage("Read notifications deleted successfully.");
     setTimeout(() => setNotifMessage(""), 5000);
   }
-  
+
+ const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
+  };
 
   //#endregion
 
   return (
+    
     <div className="space-y-6">
+      {/* Top Loading Spinner */}
+        {isRefreshing && (
+          <div className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#0f2a5c] bg-white shadow-md" />
+          </div>
+        )}
       <div className="flex flex-col justify-between gap-3 bg-linear-to-r from-[#241C70] via-[#342992] to-[#5366C8] px-6 py-6 sm:px-8 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-medium text-blue-100">
@@ -50,14 +67,15 @@ export default function NotificationsPage() {
 
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={markNotificationsRead}
-            className="w-fit rounded-xl border border-slate-200 bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
+            onClick={handleRefresh}
+            className="flex w-fit items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
           >
-            Mark all as read
+            Refresh
           </button>
+    
           <button
             onClick={deleteReadNotifications}
-            className="w-fit rounded-xl border border-red-200 bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
+            className="w-fit rounded-xl border border-red-200 bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-white/20"
           >
             Delete read
           </button>

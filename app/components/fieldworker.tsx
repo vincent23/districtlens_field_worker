@@ -94,7 +94,7 @@ export const initialTasks: Report[] = [
     id: "INC-003",
     type: "Water Line Rupture",
     location: "Julugan I",
-    status: "Monitoring",
+    status: "Active",
     AssignedStatus: "Assigned",
     etr: "5:30 PM",
     time: "12:00 PM",
@@ -181,6 +181,7 @@ export function Icon({
     | "search"
     | "arrow"
     | "history"
+    | "refresh"
     | "logout";
   className?: string;
 }) {
@@ -315,6 +316,25 @@ if (name === "map") {
       >
         <circle cx="11" cy="11" r="7" />
         <path d="m20 20-4-4" />
+      </svg>
+    );
+  }
+
+  if (name === "refresh") {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
       </svg>
     );
   }
@@ -459,6 +479,7 @@ export default function FieldWorkerShell({
   const [newStatus, setNewStatus] = useState<Status>("Active");
   const [remarks, setRemarks] = useState("");
   const [message, setMessage] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
   const [notifMessage, setNotifMessage] = useState("");
   const [historyLogs, setHistoryLogs] = useState<HistoryLog[]>([]);
   const [historySearch, setHistorySearch] = useState("");
@@ -708,16 +729,31 @@ export default function FieldWorkerShell({
 
           {nextStatus && (
             <button
-              onClick={() =>
-                updateStatus(selectedTask.id, {
+              onClick={async () => {
+                setIsUpdating(true);
+
+                await new Promise((resolve) => setTimeout(resolve, 300));
+
+                await updateStatus(selectedTask.id, {
                   AssignedStatus: nextStatus,
-                })
-              }
-              className="w-full cursor-pointer rounded-xl bg-[#0f2a5c] px-5 py-3 font-semibold text-white transition hover:bg-[#163b7c] active:scale-[0.99]"
+                });
+
+                setIsUpdating(false);
+              }}
+              disabled={isUpdating}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0f2a5c] px-5 py-3 font-semibold text-white transition hover:bg-[#163b7c] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Mark as {nextStatus}
+              {isUpdating ? (
+                <>
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Updating...
+                </>
+              ) : (
+                `Mark as ${nextStatus}`
+              )}
             </button>
           )}
+
         </div>
 
           </section>
@@ -750,6 +786,17 @@ export default function FieldWorkerShell({
 
   //#endregion
 
+  //#region Refresh
+  const [isRefreshing, setIsRefreshing] = useState(false);
+    const handleRefresh = () => {
+      setIsRefreshing(true);
+  
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    };
+  //#endregion 
+
   //#region MAIN LAYOUT
   return (
     <FieldWorkerContext.Provider
@@ -773,6 +820,12 @@ export default function FieldWorkerShell({
       <div className="min-h-screen bg-slate-50 pb-24 text-slate-900">
         {/* TOP BAR */}
         <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
+          {/* Top Loading Spinner */}
+          {isRefreshing && (
+            <div className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#0f2a5c] bg-white shadow-md" />
+            </div>
+          )}
           <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
             <Link
               href="/"
@@ -795,6 +848,12 @@ export default function FieldWorkerShell({
             </Link>
 
             <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+              <button
+              onClick={handleRefresh}
+              className="relative rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-[#0f2a5c] sm:p-2.5"
+              >
+              <Icon name="refresh" className="h-4 w-4" />
+              </button>
 
               <Link
                 href="/team"
@@ -884,7 +943,7 @@ export default function FieldWorkerShell({
               </div>
               Alerts
             </Link>
-
+            
             <Link
               href="/team"
               onClick={() => setSelectedTask(null)}

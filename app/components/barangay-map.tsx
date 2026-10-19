@@ -16,7 +16,7 @@ const STATUS_FILL: Record<ServiceStatus | "None", string> = {
   Active: "#ef4444",
   Monitoring: "#facc15",
   Normal: "#22c55e",
-  None: "#94a3b8",
+  None: "#22c55e",
 };
 
 export default function BarangayMap({

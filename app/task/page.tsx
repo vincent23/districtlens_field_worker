@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Icon, StatusBadge, useFieldWorker } from "../components/fieldworker";
 import type { Status } from "../components/fieldworker";
+import { title } from "process";
 
 //#region TASKS PAGE
 
@@ -82,18 +83,62 @@ export default function TasksPage() {
     return 0;
   };
 
+  const styles: Record<string, { color: string; light: string }> = {
+    "My Tasks": {
+      color: "#174477",
+      light: "#edf4ff",
+    },
+    Active: {
+      color: "#dc0000",
+      light: "#fff1f1",
+    },
+    Monitoring: {
+      color: "#ff9900",
+      light: "#fff8e8",
+    },
+    Resolved: {
+      color: "#009b70",
+      light: "#eafbf4",
+    },
+  };
+
+  const style = styles[title] ?? styles["My Tasks"];
+
+   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+    const handleRefresh = () => {
+      setIsRefreshing(true);
+  
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    };
+
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm font-medium text-slate-500">
+      {/* Top Loading Spinner */}
+        {isRefreshing && (
+          <div className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#0f2a5c] bg-white shadow-md" />
+          </div>
+        )}
+      <div className="justify-between gap-2 bg-linear-to-r from-[#241C70] via-[#342992] to-[#5366C8] px-6 py-6 sm:px-8 sm:flex-row sm:items-end">
+        <p className="text-sm font-medium text-blue-100">
           Field Worker Portal
         </p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
-          Tasks
+        <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
+          My Team's Assignments
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-blue-100">
           View and manage your assigned incidents.
         </p>
+
+        <button
+        onClick={handleRefresh}
+        className="flex w-fit items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+        >
+          Refresh
+        </button>
       </div>
 
       {/* Search */}
@@ -141,61 +186,102 @@ export default function TasksPage() {
       </div>
 
       {/* Task Cards */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {filteredTasks.map((task) => (
-          <button
-            key={task.id}
-            onClick={() => openTask(task)}
-            className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                  {task.id}
-                </p>
-                <h2 className="mt-2 font-bold text-slate-900">{task.type}</h2>
-                <p className="mt-1 text-sm text-slate-500">{task.location}</p>
-              </div>
-              <div className="flex items-end gap-1">
-                <StatusBadge status={task.AssignedStatus} />
-                <StatusBadge status={task.status} />
-              </div>
-            </div>
+      
+<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+  {filteredTasks.map((task) => {
+    const statusColors: Partial<Record<Status, string>> = {
+      Active: "#ef4444",
+      Monitoring: "#eab308",
+      Resolved: "#22c55e",
+    };
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">Estimated Time</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
-                  {task.AssignedStatus === "Resolved"
-                    ? "Completed"
-                    : task.etr}
-                </p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">Team</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
-                  {task.team}
-                </p>
-              </div>
-            </div>
+    const borderColor = task.AssignedStatus === "Resolved" 
+    ? "#22c55e" 
+    : statusColors[task.status] || "#cbd5e1";
 
-            {task.remarks && (
-              <div className="mt-3 rounded-xl bg-blue-50 p-3">
-                <p className="text-xs font-semibold text-blue-700">Remarks</p>
-                <p className="mt-1 text-sm text-blue-900">{task.remarks}</p>
-              </div>
-            )}
+    return (
+      <button
+        key={task.id}
+        onClick={() => openTask(task)}
+        className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      >
+        {/* Status-based left border */}
+        <div
+          className="absolute inset-y-0 left-0 z-10 w-1"
+          style={{ backgroundColor: borderColor }}
+        />
 
-            <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-blue-600">
-              View details
-              <Icon
-                name="arrow"
-                className="h-4 w-4 transition group-hover:translate-x-1"
-              />
-            </div>
-          </button>
-        ))}
-      </div>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
+              {task.id}
+            </p>
+
+            <h2 className="mt-2 font-bold text-slate-900">
+              {task.type}
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              {task.location}
+            </p>
+          </div>
+
+          <div className="flex items-end gap-1">
+            <StatusBadge status={task.AssignedStatus} />
+            <StatusBadge status={task.status} />
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-slate-50 p-3">
+            <p className="text-xs text-slate-400">
+              Estimated Time
+            </p>
+
+            <p className="mt-1 text-sm font-semibold text-slate-700">
+              {task.AssignedStatus === "Resolved"
+                ? "Completed"
+                : task.etr}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-3">
+            <p className="text-xs text-slate-400">
+              Team
+            </p>
+
+            <p className="mt-1 text-sm font-semibold text-slate-700">
+              {task.team}
+            </p>
+          </div>
+        </div>
+
+        {task.remarks && (
+          <div className="mt-3 rounded-xl bg-blue-50 p-3">
+            <p className="text-xs font-semibold text-blue-700">
+              Remarks
+            </p>
+
+            <p className="mt-1 text-sm text-blue-900">
+              {task.remarks}
+            </p>
+          </div>
+        )}
+
+        <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-blue-600">
+          View details
+
+          <Icon
+            name="arrow"
+            className="h-4 w-4 transition group-hover:translate-x-1"
+          />
+        </div>
+      </button>
+    );
+  })}
+</div>
+
+
 
       {filteredTasks.length === 0 && (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">

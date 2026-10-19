@@ -1,13 +1,16 @@
 "use client";
 
-/**
- * app/page.tsx  ->  route "/"  (HOME)
- * Everything for the Home page is in this one file.
- */
+// HOME PAGE
 
 import { useMemo } from "react";
 import Link from "next/link";
 import { Icon, StatusBadge, useFieldWorker } from "./components/fieldworker";
+import { ServiceStatus } from "./components/barangay-map";
+
+const STATUS_PRIORITY: Partial<Record<ServiceStatus, number>> = {
+  Active: 2,
+  Monitoring: 1,
+};
 
 //#region DASHBOARD CARD
 
@@ -63,7 +66,7 @@ function DashboardCard({
 
       {/* Colored top border */}
       <div
-        className="absolute top-0 right-0 left-0 z-10 h-[3px]"
+        className="absolute top-0 bottom-0 right-0 left-0 z-10 h-[3px]"
         style={{ backgroundColor: style.color }}
       />
 
@@ -168,6 +171,13 @@ export default function HomePage() {
           <p className="mt-1 text-sm text-blue-100">
             Monitor and manage your assigned incidents.
           </p>
+          <p className="mt-1 text-sm text-blue-100">
+            Tanza, Cavite | {new Date().toLocaleDateString("en-PH", {
+              year: "numeric",
+              month: "long",
+              day: "numeric"
+            })}
+          </p>
         </div>
 
         {/* <Link
@@ -251,7 +261,17 @@ export default function HomePage() {
         </div>
 
         <div className="divide-y divide-slate-100">
-          {myTasks.slice(0, 4).map((task) => (
+          {[...myTasks]
+          .sort((a, b) => {
+            const priorityA =
+              STATUS_PRIORITY[a.status as ServiceStatus] ?? 0;
+            const priorityB =
+              STATUS_PRIORITY[b.status as ServiceStatus] ?? 0;
+
+            return priorityB - priorityA;
+          })
+          .slice(0, 4)
+          .map((task) => (
             <button
               key={task.id}
               onClick={() => openTask(task)}

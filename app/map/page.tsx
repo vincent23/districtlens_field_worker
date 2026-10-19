@@ -116,18 +116,15 @@ export default function MapPage() {
         };
 
       case "Normal":
+      default:
         return {
           dot: "bg-green-500",
           bg: "bg-green-50",
           text: "text-green-700",
         };
 
-      default:
-        return {
-          dot: "bg-slate-400",
-          bg: "bg-slate-50",
-          text: "text-slate-600",
-        };
+      
+       
     }
   };
 
