@@ -54,7 +54,7 @@ function DashboardCard({
     <Link
       href={href}
       onClick={onClick}
-      className="group relative block min-h-[180px] rounded-2xl w-full overflow-hidden border border-slate-300 bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+      className="group relative block min-h-[180px] w-full overflow-hidden border border-slate-300 bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
     >
       {/* Background image: visible on hover */}
       {background && (
@@ -244,7 +244,7 @@ export default function HomePage() {
       </section>
 
       {/* Recent Tasks */}
-      <section className="overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-sm">
+      <section className="overflow-hidden border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center">
           <div>
             <h2 className="font-bold text-[#0f2a5c]">Recent Tasks</h2>
