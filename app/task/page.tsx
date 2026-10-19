@@ -203,7 +203,7 @@ export default function TasksPage() {
       <button
         key={task.id}
         onClick={() => openTask(task)}
-        className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        className="group relative overflow-hidden border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
       >
         {/* Status-based left border */}
         <div
